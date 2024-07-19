@@ -4,7 +4,7 @@
 namespace Hooks {
 	bool TESObjectReference_Initialize::Install()
 	{
-		REL::Relocation<std::uintptr_t> target{ REL::ID(19507), 0x78C };
+		REL::Relocation<std::uintptr_t> target{ REL::ID(19105), 0x69A };
 		stl::write_thunk_call<TESObjectReference_Initialize>(target.address());
 		return true;
 	}
@@ -20,7 +20,7 @@ namespace Hooks {
 
 	bool TESObjectReference_Reset::Install()
 	{
-		REL::Relocation<std::uintptr_t> target{ REL::ID(19802), 0x12B };
+		REL::Relocation<std::uintptr_t> target{ REL::ID(19375), 0x145 };
 		stl::write_thunk_call<TESObjectReference_Reset>(target.address());
 		return true;
 	}
