@@ -11,7 +11,7 @@ namespace ContainerManager {
 		static bool IsStageDone(RE::TESQuest* a_quest, int a_stage)
 		{
 			using func_t = decltype(&IsStageDone);
-			static REL::Relocation<func_t> func{ REL::ID(25011) };
+			static REL::Relocation<func_t> func{ REL::ID(24483) };
 			return func(a_quest, a_stage);
 		}
 
