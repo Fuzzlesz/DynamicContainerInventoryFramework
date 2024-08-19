@@ -596,60 +596,65 @@ namespace Settings {
 						continue;
 					}
 
-					if (!questConditionField["QuestID"] || !questConditionField["QuestID"].isString()) {
-						std::string name = friendlyNameString; name += " -> questConditions -> QuestID";
-						a_report->badStringField.push_back(name);
-						a_report->hasError = true;
-						conditionsAreValid = false;
+					if (!questConditionField["questID"] || !questConditionField["questID"].isString()) {
 						continue;
 					}
 
-					if (questConditionField["QuestStage"] && !questConditionField["QuestStage"].isUInt64()) {
-						std::string name = friendlyNameString; name += " -> questConditions -> QuestStage";
-						a_report->badStringField.push_back(name);
-						a_report->hasError = true;
-						conditionsAreValid = false;
+					if (!(questConditionField["stageDone"] || questConditionField["completed"])) {
 						continue;
 					}
 
-					if (questConditionField["Completed"] && !questConditionField["Completed"].isBool()) {
-						std::string name = friendlyNameString; name += " -> questConditions -> Completed";
-						a_report->badStringField.push_back(name);
-						a_report->hasError = true;
-						conditionsAreValid = false;
-						continue;
-					}
-
-					if (questConditionField["QuestStage"] &&
-						(!questConditionField["Operator"] || questConditionField["Operator"].isString())) {
-						std::string name = friendlyNameString; name += " -> questConditions -> Operator";
-						a_report->badStringField.push_back(name);
-						a_report->hasError = true;
-						conditionsAreValid = false;
-						continue;
-					}
-
-					ContainerManager::QuestCondition newCondition{};
-
-					newCondition.questEDID = questConditionField["QuestID"].asString();
-					if (questConditionField["Completed"]) {
-						newCondition.questCompleted = questConditionField["Completed"].asBool();
-						newCondition.comparisonValue = ContainerManager::QuestCondition::Completed;
-					}
-					else {
-						ContainerManager::QuestCondition::Comparison comparisonValue =
-							ContainerManager::QuestCondition::GetComparison(questConditionField["Operator"].asString());
-						if (comparisonValue == ContainerManager::QuestCondition::Comparison::Invalid) {
-							std::string name = friendlyNameString; name += " -> questConditions -> Operator";
-							a_report->badStringField.push_back(name);
-							a_report->hasError = true;
-							conditionsAreValid = false;
+					if (auto& stageDoneField = questConditionField["stageDone"]) {
+						if (!stageDoneField.isArray()) {
 							continue;
 						}
-						newCondition.questStage = questConditionField["QuestStage"].isUInt64();
-						newCondition.comparisonValue = comparisonValue;
+
+						bool shouldSkip = false;
+						for (auto element : stageDoneField) {
+							if (!element.isUInt64()) {
+								shouldSkip = true;
+							}
+						}
+
+						if (shouldSkip) {
+							continue;
+						}
 					}
-					questCondition = newCondition;
+
+					if (auto& completedField = questConditionField["completed"]) {
+						if (!completedField.isBool()) continue;
+					}
+
+					ContainerManager::QuestCondition::QuestCompletion completion = 
+						ContainerManager::QuestCondition::QuestCompletion::kIgnored;
+					std::string questName = "";
+					std::vector<uint16_t> sortedStages{};
+
+					if (auto& stageDoneField = questConditionField["stageDone"]) {
+						for (auto& element : stageDoneField) {
+							uint16_t stageNum = element.asUInt64();
+							sortedStages.push_back(stageNum);
+						}
+					}
+
+					if (auto& compltedField = questConditionField["completed"]) {
+						bool check = compltedField.asBool();
+						if (check) {
+							completion =
+								ContainerManager::QuestCondition::QuestCompletion::kCompleted;
+						}
+						else {
+							completion =
+								ContainerManager::QuestCondition::QuestCompletion::kOngoing;
+						}
+					}
+
+					std::sort(sortedStages.begin(), sortedStages.end());
+					questName = questConditionField["questID"].asString();
+
+					questCondition.questEDID = questName;
+					questCondition.requiredStages = sortedStages;
+					questCondition.questCompleted = completion;
 				}
 			} //End of conditions check
 			if (!conditionsAreValid) continue;

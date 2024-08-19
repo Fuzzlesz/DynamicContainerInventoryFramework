@@ -2,70 +2,47 @@
 
 namespace ContainerManager {
 	struct QuestCondition {
-		std::string questEDID;
-		uint16_t questStage;
-		bool questCompleted{ false };
-
-		enum Comparison {
-			Equal,
-			NotEqual,
-			Greater,
-			GreaterOrEqual,
-			Smaller,
-			SmallerOrEqual,
-			Completed,
-			Invalid
+		enum QuestCompletion {
+			kCompleted,
+			kOngoing,
+			kIgnored
 		};
-		Comparison comparisonValue{ Invalid };
 
-		static Comparison GetComparison(std::string a_str) {
-			if (a_str == "==") {
-				return Comparison::Equal;
-			}
-			else if (a_str == "!=") {
-				return Comparison::NotEqual;
-			}
-			else if (a_str == ">=") {
-				return Comparison::GreaterOrEqual;
-			}
-			else if (a_str == ">") {
-				return Comparison::Greater;
-			}
-			else if (a_str == "<=") {
-				return Comparison::SmallerOrEqual;
-			}
-			else if (a_str == "<") {
-				return Comparison::Smaller;
-			}
-			else {
-				return Comparison::Invalid;
-			}
+		static bool IsStageDone(RE::TESQuest* a_quest, int a_stage)
+		{
+			using func_t = decltype(&IsStageDone);
+			static REL::Relocation<func_t> func{ REL::ID(25011) };
+			return func(a_quest, a_stage);
 		}
 
-		bool IsValid() {
-			if (comparisonValue == Invalid) return true;
+		std::string questEDID{};
+		std::vector<uint16_t> requiredStages{};
+		QuestCompletion questCompleted{ kIgnored };
 
+		bool IsValid() {
+			if (questEDID.empty()) return true;
 			auto* quest = RE::TESForm::LookupByEditorID<RE::TESQuest>(questEDID);
 			if (!quest) return false;
 
-			switch (comparisonValue) {
-			case Equal:
-				return quest->GetCurrentStageID() == questStage;
-			case NotEqual:
-				return quest->GetCurrentStageID() != questStage;
-			case Greater:
-				return quest->GetCurrentStageID() > questStage;
-			case GreaterOrEqual:
-				return quest->GetCurrentStageID() >= questStage;
-			case Smaller:
-				return quest->GetCurrentStageID() < questStage;
-			case SmallerOrEqual:
-				return quest->GetCurrentStageID() <= questStage;
-			case Completed:
-				return quest->IsCompleted() == questCompleted;
-			default:
-				return false;
+			if (questCompleted == kIgnored && requiredStages.empty()) {
+				return quest->IsCompleted();
 			}
+
+			if (questCompleted != kIgnored) {
+				if (questCompleted == kCompleted && !quest->IsCompleted()) {
+					return false;
+				}
+				else if (questCompleted == kOngoing && quest->IsCompleted()) {
+					return false;
+				}
+			}
+			if (requiredStages.empty()) return true;
+
+			for (auto requiredStage : requiredStages) {
+				if (!IsStageDone(quest, requiredStage)) return false;
+			}
+
+			return true;
 		}
 	};
 
