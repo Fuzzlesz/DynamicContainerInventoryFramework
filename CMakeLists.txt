@@ -19,8 +19,8 @@ include(SKSEPlugin)
 set(SKSE_USE_XBYAK ON)
 find_path(CLIB_UTIL_INCLUDE_DIRS "ClibUtil/utils.hpp")
 
-add_compile_definitions(SKYRIM_AE)
-add_compile_definitions(SKYRIM_SUPPORT_AE)
+add_compile_definitions(SKYRIM_SE)
+add_compile_definitions(SKYRIM_SUPPORT_SE)
 add_compile_definitions(SKSE_SUPPORT_XBYAK)
 
 if (BUILD_TEST)
